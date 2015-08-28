@@ -1,51 +1,70 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+
 var app = {
-    // Application Constructor
-    initialize: function() {
-        this.bindEvents();
-    },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
-    },
-    // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicitly call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-    },
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
+	initialize: function() {
+		this.bindEvents();
+	},
 
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
+	bindEvents: function() {
+		document.addEventListener('deviceready', this.onDeviceReady, false);
+	},
 
-        console.log('Received Event: ' + id);
-    }
+	onDeviceReady: function() {
+		app.receivedEvent('deviceready');
+	},
+
+	receivedEvent: function(id) {
+		var parentElement = document.getElementById(id);
+		var listeningElement = parentElement.querySelector('.listening');
+		var receivedElement = parentElement.querySelector('.received');
+		listeningElement.setAttribute('style', 'display:none;');
+		receivedElement.setAttribute('style', 'display:block;');
+		console.log('Received Event: ' + id);
+	},
+
+	drawResult: function(t, field, link, title){
+		$('#result').empty();
+		_.each(t, function(a, b){
+
+					template = '\
+					<ul class="ui-listview" data-role="listview" data-type="horizontal">\
+						<li class="ui-first-child ui-last-child">\
+							<a <a href="#' + link + '?' + a.replace(/ /g,'.') + '" data-role="button" data-transition="slide" class="btn-game-name ui-btn ui-icon-carat-r ui-btn-icon-right">' + a + ' </a>\
+						</li>\
+					</ul>\
+					'
+			field.append(template);
+		})
+		$('.ui-title').html(title);
+	},
+
+	index: function(){
+		self = this;
+		$('#bus-number-index').on('keyup', function(){
+			self.drawResult(window.busSearch.findBus($('#bus-number-index').val())['inbound'], $('#result'), 'dest', $('#bus-number-index').val())
+		})
+		$('#bus-number-index').val('');
+		setTimeout(function(){$('#bus-number-index').focus()},100)
+	},
+
+	dest: function(event, args){
+		var destination = args.input.replace(/\./g,' ').substr(6,args.input.length -1)
+		$('h1').html(destination);
+		this.drawResult(window.busSearch.busesForDestination(destination), $('#result2'), 'bus', destination)
+	},
+
+	bus: function(event, args){
+		this.index();
+		var busNumber = args[0].split('?')[1];
+		self.drawResult(window.busSearch.findBus(busNumber)['inbound'], $('#result3'), 'dest', busNumber)
+	}
+
 };
 
-app.initialize();
+var router = new $.mobile.Router([
+		{ "#bus[?]\\d+": {handler: "bus", events:"bs"} },
+		{ "#dest[?]\\S+": {handler: "dest", events:"bs"} },
+		{ "": "index" }
+], app);
+
+
+
